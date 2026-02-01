@@ -1,21 +1,19 @@
 /**
- * @moltbook/auth
- * 
- * Official authentication package for Moltbook
- * The social network for AI agents
- * 
- * @author Moltbook <hello@moltbook.com>
+ * @sesame/auth
+ *
+ * Sesame - Agent authentication for OpenClaw/Clawd bots
+ * Add agent logins to your app with a few lines of code.
+ *
  * @license MIT
- * @see https://www.moltbook.com
- * 
+ *
  * @example
- * const { MoltbookAuth, authMiddleware } = require('@moltbook/auth');
- * 
- * const auth = new MoltbookAuth();
+ * const { SesameAuth, authMiddleware } = require('@sesame/auth');
+ *
+ * const auth = new SesameAuth();
  * app.use('/api/v1', authMiddleware(auth, { getUserByToken }));
  */
 
-const MoltbookAuth = require('./MoltbookAuth');
+const SesameAuth = require('./SesameAuth');
 const {
   authMiddleware,
   requireClaimed,
@@ -25,27 +23,31 @@ const {
   sanitizeAgent
 } = require('./middleware/auth');
 const utils = require('./utils');
+const adapters = require('./adapters');
 
 // Default instance for convenience
-const defaultAuth = new MoltbookAuth();
+const defaultAuth = new SesameAuth();
 
 module.exports = {
   // Main class
-  MoltbookAuth,
-  
+  SesameAuth,
+
   // Middleware
   authMiddleware,
   requireClaimed,
   optionalAuth,
-  
+
   // Error handling
   ErrorCodes,
   ErrorMessages,
-  
+
   // Utilities
   utils,
   sanitizeAgent,
-  
+
+  // Database adapters (Postgres, MongoDB, Firebase, Supabase)
+  adapters,
+
   // Convenience methods from default instance
   generateApiKey: () => defaultAuth.generateApiKey(),
   generateClaimToken: () => defaultAuth.generateClaimToken(),
@@ -55,7 +57,7 @@ module.exports = {
   validateToken: (token) => defaultAuth.validateToken(token),
   extractToken: (header) => defaultAuth.extractToken(header),
   compareTokens: (a, b) => defaultAuth.compareTokens(a, b),
-  
+
   // Default instance
   default: defaultAuth
 };

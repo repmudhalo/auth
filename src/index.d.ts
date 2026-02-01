@@ -1,13 +1,15 @@
 /**
- * TypeScript definitions for @moltbook/auth
+ * TypeScript definitions for @sesame/auth
+ * Sesame - Agent authentication for OpenClaw/Clawd bots
  */
 
 import { Request, Response, NextFunction } from 'express';
 
-export interface MoltbookAuthOptions {
+export interface SesameAuthOptions {
   tokenPrefix?: string;
   claimPrefix?: string;
   tokenLength?: number;
+  claimBaseUrl?: string;
 }
 
 export interface RegistrationResult {
@@ -55,13 +57,14 @@ export interface AuthMiddlewareOptions {
   checkClaimed?: boolean;
 }
 
-export class MoltbookAuth {
-  constructor(options?: MoltbookAuthOptions);
-  
+export class SesameAuth {
+  constructor(options?: SesameAuthOptions);
+
   readonly tokenPrefix: string;
   readonly claimPrefix: string;
   readonly tokenLength: number;
-  
+  readonly claimBaseUrl: string;
+
   generateApiKey(): string;
   generateClaimToken(): string;
   generateVerificationCode(): string;
@@ -74,17 +77,17 @@ export class MoltbookAuth {
 }
 
 export function authMiddleware(
-  auth: MoltbookAuth,
+  auth: SesameAuth,
   options?: AuthMiddlewareOptions
 ): (req: Request, res: Response, next: NextFunction) => void;
 
 export function requireClaimed(
-  auth: MoltbookAuth,
+  auth: SesameAuth,
   options?: Omit<AuthMiddlewareOptions, 'required' | 'checkClaimed'>
 ): (req: Request, res: Response, next: NextFunction) => void;
 
 export function optionalAuth(
-  auth: MoltbookAuth,
+  auth: SesameAuth,
   options?: Omit<AuthMiddlewareOptions, 'required'>
 ): (req: Request, res: Response, next: NextFunction) => void;
 
@@ -119,4 +122,23 @@ export function validateToken(token: string): boolean;
 export function extractToken(header: string | undefined): string | null;
 export function compareTokens(tokenA: string, tokenB: string): boolean;
 
-export const default: MoltbookAuth;
+export const default: SesameAuth;
+
+// Database adapters
+export namespace adapters {
+  function createAdapter(type: 'postgres' | 'mongodb' | 'firebase' | 'supabase', options?: object): Adapter;
+  function createGetUserByToken(adapter: Adapter, utils: typeof import('./utils')): (token: string) => Promise<Agent | null>;
+
+  function postgresAdapter(options: { connectionString?: string; pool?: object; table?: string }): Adapter;
+  function mongodbAdapter(options: { connectionString?: string; database?: string; collection?: string; client?: object }): Adapter;
+  function firebaseAdapter(options: { credential?: object; projectId?: string; collection?: string; app?: object }): Adapter;
+  function supabaseAdapter(options: { url: string; serviceKey: string; table?: string; client?: object }): Adapter;
+}
+
+export interface Adapter {
+  createAgent(data: { apiKeyHash: string; claimToken: string; verificationCode: string; name?: string; description?: string }): Promise<{ id: string }>;
+  findAgentByApiKeyHash(hash: string): Promise<Agent | null>;
+  findAgentByVerificationCode(code: string): Promise<Agent | null>;
+  findAgentByClaimToken(token: string): Promise<Agent | null>;
+  updateAgentStatus(id: string, status: string): Promise<void>;
+}

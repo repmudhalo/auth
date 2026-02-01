@@ -1,7 +1,8 @@
 /**
  * Express Authentication Middleware
- * 
- * @module @moltbook/auth/middleware
+ * Sesame - Agent auth for OpenClaw/Clawd bots
+ *
+ * @module @sesame/auth/middleware
  */
 
 /**
@@ -26,7 +27,7 @@ const ErrorMessages = {
   [ErrorCodes.INVALID_FORMAT]: {
     status: 401,
     error: 'Invalid token format',
-    hint: 'Token should start with "moltbook_" followed by 64 hex characters'
+    hint: 'Token should start with "sesame_" followed by 64 hex characters'
   },
   [ErrorCodes.INVALID_TOKEN]: {
     status: 401,
@@ -36,30 +37,30 @@ const ErrorMessages = {
   [ErrorCodes.NOT_CLAIMED]: {
     status: 403,
     error: 'Agent not yet claimed',
-    hint: 'Have your human visit the claim URL and verify via tweet'
+    hint: 'Have your human visit the claim URL and complete verification'
   }
 };
 
 /**
  * Create authentication middleware
- * 
- * @param {MoltbookAuth} auth - MoltbookAuth instance
+ *
+ * @param {SesameAuth} auth - SesameAuth instance
  * @param {Object} options - Middleware options
  * @param {boolean} options.required - Whether auth is required (default: true)
- * @param {Function} options.getUserByToken - Custom user lookup function
+ * @param {Function} options.getUserByToken - Custom agent lookup function
  * @param {Function} options.onError - Custom error handler
  * @param {boolean} options.checkClaimed - Check if agent is claimed (default: false)
  * @returns {Function} Express middleware
- * 
+ *
  * @example
  * // Basic usage
  * app.use('/api/v1', authMiddleware(auth));
- * 
- * // With custom user lookup
+ *
+ * // With custom agent lookup
  * app.use('/api/v1', authMiddleware(auth, {
  *   getUserByToken: (token) => db.agents.findByApiKey(token)
  * }));
- * 
+ *
  * // Optional authentication
  * app.get('/api/v1/posts', authMiddleware(auth, { required: false }), handler);
  */
@@ -96,11 +97,11 @@ function authMiddleware(auth, options = {}) {
       return sendError(res, ErrorCodes.INVALID_FORMAT, onError);
     }
 
-    // Look up user if function provided
+    // Look up agent if function provided
     if (getUserByToken) {
       try {
         const agent = await Promise.resolve(getUserByToken(token));
-        
+
         if (!agent) {
           if (!required) {
             req.agent = null;
@@ -118,13 +119,13 @@ function authMiddleware(auth, options = {}) {
         // Attach agent to request (without exposing API key)
         req.agent = sanitizeAgent(agent);
         req.token = token;
-        
+
       } catch (error) {
-        console.error('[moltbook/auth] User lookup error:', error);
+        console.error('[sesame/auth] Agent lookup error:', error);
         return sendError(res, ErrorCodes.INVALID_TOKEN, onError);
       }
     } else {
-      // No user lookup - just validate format
+      // No agent lookup - just validate format
       req.agent = null;
       req.token = token;
     }
@@ -135,7 +136,7 @@ function authMiddleware(auth, options = {}) {
 
 /**
  * Send error response
- * 
+ *
  * @private
  */
 function sendError(res, code, customHandler) {
@@ -144,7 +145,7 @@ function sendError(res, code, customHandler) {
   }
 
   const { status, error, hint } = ErrorMessages[code];
-  
+
   return res.status(status).json({
     success: false,
     error,
@@ -155,14 +156,14 @@ function sendError(res, code, customHandler) {
 
 /**
  * Remove sensitive data from agent object
- * 
+ *
  * @private
  * @param {Object} agent - Agent object
  * @returns {Object} Sanitized agent
  */
 function sanitizeAgent(agent) {
   if (!agent) return null;
-  
+
   const {
     apiKey,
     api_key,
@@ -170,15 +171,15 @@ function sanitizeAgent(agent) {
     claim_token,
     ...safeAgent
   } = agent;
-  
+
   return safeAgent;
 }
 
 /**
  * Create middleware that requires claimed status
  * Convenience wrapper around authMiddleware
- * 
- * @param {MoltbookAuth} auth - MoltbookAuth instance
+ *
+ * @param {SesameAuth} auth - SesameAuth instance
  * @param {Object} options - Additional options
  * @returns {Function} Express middleware
  */
@@ -193,8 +194,8 @@ function requireClaimed(auth, options = {}) {
 /**
  * Create optional auth middleware
  * Convenience wrapper
- * 
- * @param {MoltbookAuth} auth - MoltbookAuth instance
+ *
+ * @param {SesameAuth} auth - SesameAuth instance
  * @param {Object} options - Additional options
  * @returns {Function} Express middleware
  */

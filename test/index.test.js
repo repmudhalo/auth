@@ -1,12 +1,12 @@
 /**
- * @moltbook/auth Test Suite
- * 
+ * @sesame/auth Test Suite
+ *
  * Run: npm test
  */
 
-const { 
-  MoltbookAuth, 
-  authMiddleware, 
+const {
+  SesameAuth,
+  authMiddleware,
   optionalAuth,
   ErrorCodes,
   utils,
@@ -57,20 +57,20 @@ function assertEqual(actual, expected, message) {
 // Tests
 // ============================================
 
-console.log('\n🦞 @moltbook/auth Test Suite\n');
+console.log('\n🔑 @sesame/auth Test Suite\n');
 console.log('═'.repeat(50));
 
-// MoltbookAuth Class Tests
-describe('MoltbookAuth', () => {
+// SesameAuth Class Tests
+describe('SesameAuth', () => {
   test('creates instance with default options', () => {
-    const auth = new MoltbookAuth();
-    assertEqual(auth.tokenPrefix, 'moltbook_');
-    assertEqual(auth.claimPrefix, 'moltbook_claim_');
+    const auth = new SesameAuth();
+    assertEqual(auth.tokenPrefix, 'sesame_');
+    assertEqual(auth.claimPrefix, 'sesame_claim_');
     assertEqual(auth.tokenLength, 32);
   });
 
   test('creates instance with custom options', () => {
-    const auth = new MoltbookAuth({
+    const auth = new SesameAuth({
       tokenPrefix: 'custom_',
       claimPrefix: 'custom_claim_',
       tokenLength: 16
@@ -79,21 +79,26 @@ describe('MoltbookAuth', () => {
     assertEqual(auth.claimPrefix, 'custom_claim_');
     assertEqual(auth.tokenLength, 16);
   });
+
+  test('accepts claimBaseUrl option', () => {
+    const auth = new SesameAuth({ claimBaseUrl: 'https://myapp.com' });
+    assertEqual(auth.claimBaseUrl, 'https://myapp.com');
+  });
 });
 
 // API Key Generation Tests
 describe('API Key Generation', () => {
-  const auth = new MoltbookAuth();
+  const auth = new SesameAuth();
 
   test('generates API key with correct prefix', () => {
     const apiKey = auth.generateApiKey();
-    assert(apiKey.startsWith('moltbook_'), 'Should start with moltbook_');
+    assert(apiKey.startsWith('sesame_'), 'Should start with sesame_');
   });
 
   test('generates API key with correct length', () => {
     const apiKey = auth.generateApiKey();
-    // 'moltbook_' (9) + 64 hex chars = 73
-    assertEqual(apiKey.length, 73);
+    // 'sesame_' (7) + 64 hex chars = 71
+    assertEqual(apiKey.length, 71);
   });
 
   test('generates unique API keys', () => {
@@ -107,23 +112,23 @@ describe('API Key Generation', () => {
 
 // Claim Token Tests
 describe('Claim Token Generation', () => {
-  const auth = new MoltbookAuth();
+  const auth = new SesameAuth();
 
   test('generates claim token with correct prefix', () => {
     const token = auth.generateClaimToken();
-    assert(token.startsWith('moltbook_claim_'), 'Should start with moltbook_claim_');
+    assert(token.startsWith('sesame_claim_'), 'Should start with sesame_claim_');
   });
 
   test('generates claim token with correct length', () => {
     const token = auth.generateClaimToken();
-    // 'moltbook_claim_' (15) + 64 hex chars = 79
-    assertEqual(token.length, 79);
+    // 'sesame_claim_' (13) + 64 hex chars = 77
+    assertEqual(token.length, 77);
   });
 });
 
 // Verification Code Tests
 describe('Verification Code Generation', () => {
-  const auth = new MoltbookAuth();
+  const auth = new SesameAuth();
 
   test('generates verification code in correct format', () => {
     const code = auth.generateVerificationCode();
@@ -141,7 +146,7 @@ describe('Verification Code Generation', () => {
 
 // Validation Tests
 describe('Token Validation', () => {
-  const auth = new MoltbookAuth();
+  const auth = new SesameAuth();
 
   test('validates correct API key', () => {
     const apiKey = auth.generateApiKey();
@@ -153,7 +158,7 @@ describe('Token Validation', () => {
   });
 
   test('rejects short API key', () => {
-    assert(!auth.validateApiKey('moltbook_abc'), 'Should reject short key');
+    assert(!auth.validateApiKey('sesame_abc'), 'Should reject short key');
   });
 
   test('rejects null', () => {
@@ -179,16 +184,16 @@ describe('Token Validation', () => {
 
 // Token Extraction Tests
 describe('Token Extraction', () => {
-  const auth = new MoltbookAuth();
+  const auth = new SesameAuth();
 
   test('extracts token from Bearer header', () => {
-    const token = auth.extractToken('Bearer moltbook_abc123');
-    assertEqual(token, 'moltbook_abc123');
+    const token = auth.extractToken('Bearer sesame_abc123');
+    assertEqual(token, 'sesame_abc123');
   });
 
   test('handles lowercase bearer', () => {
-    const token = auth.extractToken('bearer moltbook_abc123');
-    assertEqual(token, 'moltbook_abc123');
+    const token = auth.extractToken('bearer sesame_abc123');
+    assertEqual(token, 'sesame_abc123');
   });
 
   test('rejects Basic auth', () => {
@@ -210,7 +215,7 @@ describe('Token Extraction', () => {
 
 // Token Comparison Tests
 describe('Token Comparison', () => {
-  const auth = new MoltbookAuth();
+  const auth = new SesameAuth();
 
   test('returns true for equal tokens', () => {
     const token = auth.generateApiKey();
@@ -235,11 +240,10 @@ describe('Token Comparison', () => {
 
 // Registration Helper Tests
 describe('Registration Helper', () => {
-  const auth = new MoltbookAuth();
-
   test('creates complete registration object', () => {
+    const auth = new SesameAuth();
     const reg = auth.createRegistration('TestAgent', 'A test agent');
-    
+
     assert(reg.apiKey, 'Should have apiKey');
     assert(reg.claimToken, 'Should have claimToken');
     assert(reg.verificationCode, 'Should have verificationCode');
@@ -247,13 +251,21 @@ describe('Registration Helper', () => {
     assert(reg.response.agent.claim_url.includes('/claim/'), 'Should have claim_url');
     assert(reg.response.important.includes('SAVE'), 'Should have warning');
   });
+
+  test('claimBaseUrl builds full claim URL', () => {
+    const auth = new SesameAuth({ claimBaseUrl: 'https://myapp.com' });
+    const reg = auth.createRegistration('TestAgent');
+
+    assert(reg.response.agent.claim_url.startsWith('https://myapp.com/claim/'), 'Should use claimBaseUrl');
+    assert(reg.response.agent.claim_url.includes('sesame_claim_'), 'Should include claim token');
+  });
 });
 
 // Convenience Export Tests
 describe('Convenience Exports', () => {
   test('generateApiKey works', () => {
     const key = generateApiKey();
-    assert(key.startsWith('moltbook_'), 'Should generate valid key');
+    assert(key.startsWith('sesame_'), 'Should generate valid key');
   });
 
   test('validateApiKey works', () => {
@@ -262,8 +274,8 @@ describe('Convenience Exports', () => {
   });
 
   test('extractToken works', () => {
-    const token = extractToken('Bearer moltbook_test');
-    assertEqual(token, 'moltbook_test');
+    const token = extractToken('Bearer sesame_test');
+    assertEqual(token, 'sesame_test');
   });
 });
 
@@ -283,19 +295,24 @@ describe('Utils', () => {
   });
 
   test('maskToken hides middle', () => {
-    const masked = utils.maskToken('moltbook_abcdefghijklmnop');
+    const masked = utils.maskToken('sesame_abcdefghijklmnop');
     assert(masked.includes('...'), 'Should have ellipsis');
     assert(!masked.includes('abcdefghijklmnop'), 'Should not show full token');
   });
 
   test('looksLikeToken identifies tokens', () => {
-    assert(utils.looksLikeToken('moltbook_abc'), 'Should identify API key');
-    assert(utils.looksLikeToken('moltbook_claim_abc'), 'Should identify claim token');
+    assert(utils.looksLikeToken('sesame_abc'), 'Should identify API key');
+    assert(utils.looksLikeToken('sesame_claim_abc'), 'Should identify claim token');
     assert(!utils.looksLikeToken('random_string'), 'Should reject random string');
   });
 
-  test('parseClaimUrl extracts token', () => {
-    const token = utils.parseClaimUrl('https://www.moltbook.com/claim/moltbook_claim_abc123');
+  test('parseClaimUrl extracts sesame token', () => {
+    const token = utils.parseClaimUrl('https://myapp.com/claim/sesame_claim_abc123');
+    assertEqual(token, 'sesame_claim_abc123');
+  });
+
+  test('parseClaimUrl supports legacy moltbook_claim_ (backward compat)', () => {
+    const token = utils.parseClaimUrl('https://example.com/claim/moltbook_claim_abc123');
     assertEqual(token, 'moltbook_claim_abc123');
   });
 
@@ -305,16 +322,38 @@ describe('Utils', () => {
   });
 });
 
+// Adapters Tests
+describe('Adapters', () => {
+  const { adapters } = require('../src');
+
+  test('createAdapter throws for unknown type', () => {
+    try {
+      adapters.createAdapter('unknown');
+      assert(false, 'Should throw');
+    } catch (e) {
+      assert(e.message.includes('Unknown adapter'));
+    }
+  });
+
+  test('createGetUserByToken returns function', () => {
+    const mockAdapter = {
+      findAgentByApiKeyHash: async () => null
+    };
+    const getUserByToken = adapters.createGetUserByToken(mockAdapter, require('../src').utils);
+    assertEqual(typeof getUserByToken, 'function');
+  });
+});
+
 // Middleware Tests (Mock)
 describe('Middleware', () => {
   test('authMiddleware is a function', () => {
-    const auth = new MoltbookAuth();
+    const auth = new SesameAuth();
     const middleware = authMiddleware(auth);
     assertEqual(typeof middleware, 'function');
   });
 
   test('optionalAuth is a function', () => {
-    const auth = new MoltbookAuth();
+    const auth = new SesameAuth();
     const middleware = optionalAuth(auth);
     assertEqual(typeof middleware, 'function');
   });
@@ -332,7 +371,7 @@ describe('Middleware', () => {
 // ============================================
 
 console.log('\n' + '═'.repeat(50));
-console.log(`\n🦞 Results: ${passed} passed, ${failed} failed\n`);
+console.log(`\n🔑 Results: ${passed} passed, ${failed} failed\n`);
 
 if (failed > 0) {
   console.log('❌ Some tests failed!\n');

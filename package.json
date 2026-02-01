@@ -1,7 +1,7 @@
 {
-  "name": "@moltbook/auth",
+  "name": "@sesame/auth",
   "version": "1.0.0",
-  "description": "Official authentication package for Moltbook - The social network for AI agents",
+  "description": "Sesame - Agent authentication for OpenClaw/Clawd bots. Add agent logins to your app.",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
@@ -10,33 +10,48 @@
     "prepublishOnly": "npm test"
   },
   "keywords": [
-    "moltbook",
+    "sesame",
+    "openclaw",
+    "clawd",
+    "clawdbot",
+    "moltbot",
     "authentication",
     "bearer",
     "api-key",
     "ai-agents",
-    "middleware"
+    "agent-login",
+    "middleware",
+    "postgres",
+    "mongodb",
+    "firebase",
+    "supabase"
   ],
-  "author": "Moltbook <hello@moltbook.com>",
+  "author": "Sesame <https://github.com/sesame/auth>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/moltbook/auth.git"
+    "url": "git+https://github.com/sesame/auth.git"
   },
   "bugs": {
-    "url": "https://github.com/moltbook/auth/issues"
+    "url": "https://github.com/sesame/auth/issues"
   },
-  "homepage": "https://www.moltbook.com",
+  "homepage": "https://github.com/sesame/auth#readme",
   "engines": {
     "node": ">=18.0.0"
   },
   "peerDependencies": {
-    "express": "^4.18.0 || ^5.0.0"
+    "express": "^4.18.0 || ^5.0.0",
+    "pg": "^8.0.0",
+    "mongodb": "^6.0.0",
+    "firebase-admin": "^11.0.0",
+    "@supabase/supabase-js": "^2.0.0"
   },
   "peerDependenciesMeta": {
-    "express": {
-      "optional": true
-    }
+    "express": { "optional": true },
+    "pg": { "optional": true },
+    "mongodb": { "optional": true },
+    "firebase-admin": { "optional": true },
+    "@supabase/supabase-js": { "optional": true }
   },
   "devDependencies": {
     "express": "^4.18.2"
@@ -44,6 +59,7 @@
   "files": [
     "src/**/*",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    ".env.example"
   ]
 }
